@@ -28,7 +28,7 @@ except ImportError:
 				if addComma:
 					output = ''.join([output,','])
 				if isinstance(value, dict):
-					output = ''.join([output,'"',str(key),'":',self.dump(value)])
+					output = ''.join([output,'"',str(key),'":',self.dumps(value)])
 				else:
 					output = ''.join([output,'"',str(key),'":','"',str(value),'"'])
 				addComma=True
@@ -37,12 +37,11 @@ except ImportError:
     
     json = JSON()
 
-API_URL = 'https://api.skunkalytics.com/service/event'
+API_URL = 'https://api.indicative.com/service/event'
 CONTENT_TYPE = 'application/json'
 LOGGER_NAME = __name__
-NUM_THREADS=4
 
-_project_id = None
+_api_key = None
 _initialized = False
 _queue = None
 _misconfigured_warning = False
@@ -50,8 +49,8 @@ _threads=[]
 _shutdown = False
 
 class Event:
-	def __init__(self, event_name, event_unique_id, project_id, param_dict):
-		self.data = {'eventName':event_name, 'projectId':project_id, 'eventUniqueId':event_unique_id, 
+	def __init__(self, event_name, event_unique_id, api_key, param_dict):
+		self.data = {'eventName':event_name, 'apiKey':api_key, 'eventUniqueId':event_unique_id, 
 		'eventTime':long(round(time.time()*1000)), 'properties': param_dict}
 		
 	def json(self):
@@ -76,15 +75,22 @@ def _sendEvent(event):
         logging.getLogger(LOGGER_NAME).exception('Encountered exception while sending event.')
 
 
+""" Sends an event to the Indicative API endpoint.
 
-def record(event_name, event_unique_id, project_id=None, param_dict={}):
+:param event_name: name of the event
+:param event_unique_id: unique identifier for the user associated with the event
+:param param_dict: dictionary object containing property names and values
+:param api_key: the project's API key
+"""
+def record(event_name, event_unique_id, param_dict={}, api_key=None):
 	global _initialized
 	global _misconfigured_warning
 	global _shutdown
+	global _api_key
 	if _shutdown:
 		logging.getLogger(LOGGER_NAME).error('record() called after shutdown!')
-	if project_id == None:
-		if PROJECT_ID == None:
+	if api_key == None:
+		if _api_key == None:
 			if not _misconfigured_warning:
 				return
 			logging.getLogger(LOGGER_NAME).error('record() called before init() is called! '+
@@ -92,26 +98,33 @@ def record(event_name, event_unique_id, project_id=None, param_dict={}):
 												'will only be logged once.')
 			misconfigured_warning = True
 			return
-		project_id = PROJECT_ID
+		api_key = _api_key
 	else:
 		if not _initialized:
-			init(project_id)
+			init(api_key)
 		
 		
-	event = {'eventName':event_name, 'projectId':project_id, 'eventUniqueId':event_unique_id, 
+	event = {'eventName':event_name, 'apiKey':api_key, 'eventUniqueId':event_unique_id, 
 		'eventTime':long(round(time.time()*1000)), 'properties': param_dict}
 	_queue.put(event)
 
-def init(project_id, num_threads = 10):
+""" Sets the API key and number of threads to use when recording events.  
+
+:param api_key: the project's API key
+:param num_threads: the number of threads to use
+"""
+def init(api_key, num_threads = 4):
 	global _initialized
 	global _queue
+	global _api_key
 	_initialized = True
+	_api_key = api_key
 	if _queue != None:
 		logging.getLogger(LOGGER_NAME).warn('A second initialization attempt was detected. ')
 	_queue=Queue()
-	for i in range(THREADS):
+	for i in range(num_threads):
 	    t=Thread(target=_doWork)
-	    t.daemon=True
+	    t.setDaemon(True) #python 2.5 does not support daemon attribute
 	    t.start()
 	    
 def shutdown():
