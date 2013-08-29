@@ -10,10 +10,12 @@ Features:
 
 Sample usage:
 
-    // As part of your app's startup process, call init() with your project's API key
+    // As part of your app's startup process, call init() with your 
+    // project's API key. You can find yours by logging in at
+    // indicative.com and navigating to the Project Settings page.
     init('Your-API-Key-Goes-Here');
     
-    // Then record events with a single method call
+    // Then record events with a single method call.
     record('Registration', 'user47', {'Gender': 'Female', 'Age': 23});
 
 You should modify and extend this class to your heart's content.  If you make any changes please send a pull request!
