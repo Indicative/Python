@@ -10,7 +10,7 @@ Features:
 
 Sample usage:
 
-    // First call init() with your project's API key
+    // As part of your app's startup process, call init() with your project's API key
     init('Your-API-Key-Goes-Here');
     
     // Then record events with a single method call
