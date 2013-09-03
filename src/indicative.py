@@ -18,7 +18,7 @@ import time
 try:
     import json
 except ImportError:
-    #Yuck. Python 2.5 does not come with json module
+    #Python 2.5 does not come with json module.
     #This is kinda hacky, but it does work for our purposes
     class JSON:
     	def dumps(self, map):
