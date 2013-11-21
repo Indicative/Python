@@ -28,11 +28,12 @@ except ImportError:
 				if addComma:
 					output = ''.join([output,','])
 				if isinstance(value, dict):
-					output = ''.join([output,'"',str(key),'":',self.dumps(value)])
+					output = ''.join([output,'"',str(key).replace('"','\\"'),'":',self.dumps(value)])
 				else:
-					output = ''.join([output,'"',str(key),'":','"',str(value),'"'])
+					output = ''.join([output,'"',str(key),'":','"',str(value).replace('"','\\"'),'"'])
 				addComma=True
 			output = ''.join([output,'}'])	
+			print(output)
 			return output
     
     json = JSON()
@@ -57,10 +58,11 @@ class Event:
 		return 	json.dumps(self.data)
 
 def _doWork():
-    while True:
+    while not _shutdown or not _queue.empty():
         event=_queue.get()
         _sendEvent(event)
         _queue.task_done()
+    logging.getLogger(LOGGER_NAME).info('Thread Exit')
 
 def _sendEvent(event):
     try:
@@ -124,10 +126,11 @@ def init(api_key, num_threads = 4):
 	_queue=Queue()
 	for i in range(num_threads):
 	    t=Thread(target=_doWork)
-	    t.setDaemon(True) #python 2.5 does not support daemon attribute
+	    t.setDaemon(False) #python 2.5 does not support daemon attribute
 	    t.start()
+	    _threads.append(t)
 	    
 def shutdown():
 	global _shutdown
-	
-    
+	_shutdown=True
+    	logging.getLogger(LOGGER_NAME).warn('Shutting down the Indicative client. There are still %d events in the queue' % _queue.qsize())

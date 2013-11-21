@@ -1,5 +1,8 @@
 Python Client for Indicative's REST API
 
+
+WARNING: This client is considered EXPERIMENTAL. It's known to work with Python 2.6 and 2.7, but there's no guarantee it's bug free. Use are your own risk!
+
 This REST client creates a JSON representation of your event and posts it to Indicative's Event endpoint.
 
 Features:
