@@ -30,7 +30,7 @@ except ImportError:
 				if isinstance(value, dict):
 					output = ''.join([output,'"',str(key).replace('"','\\"'),'":',self.dumps(value)])
 				else:
-					output = ''.join([output,'"',str(key),'":','"',str(value).replace('"','\\"'),'"'])
+					output = ''.join([output,'"',str(key).replace('"','\\"'),'":','"',str(value).replace('"','\\"'),'"'])
 				addComma=True
 			output = ''.join([output,'}'])	
 			print(output)
