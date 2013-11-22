@@ -132,5 +132,9 @@ def init(api_key, num_threads = 4):
 	    
 def shutdown():
 	global _shutdown
+	global _threads
 	_shutdown=True
-    	logging.getLogger(LOGGER_NAME).warn('Shutting down the Indicative client. There are still %d events in the queue' % _queue.qsize())
+    	logging.getLogger(LOGGER_NAME).info('Shutting down the Indicative client. Sending the remaining %d events...' % _queue.qsize())
+	for t in _threads:
+		t.join()
+	logging.getLogger(LOGGER_NAME).info('Indicative client shutdown complete!')
