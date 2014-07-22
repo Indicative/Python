@@ -1,18 +1,13 @@
 #######################################################################
 # indicative.py
-# Standalone Client Library for Indicative's Input API. Uses a Queue and 
-# multiple worker threads to send events to Indicative asynchronously.
+# Standalone Client Library for Indicative's Input API.  
+# This client is SYNCHRONOUS. It's recommended that you use this client
+# in the async processing part of your infrastructure.
 # This client is a good choice for small volumes of events in standalone
-# projects. 
-#
-# Note, if you are using Celery as part of your infrastructure, its 
-# recommended to use our celery client instead. See the Indicative 
-# documentation for more details
+# projects or for testing.
 #######################################################################
 from urlparse import urlparse
-from threading import Thread
 import httplib, sys
-from Queue import Queue
 import logging
 import time
 try:
@@ -44,25 +39,8 @@ LOGGER_NAME = __name__
 
 _api_key = None
 _initialized = False
-_queue = None
 _misconfigured_warning = False
-_threads=[]
-_shutdown = False
 
-class Event:
-	def __init__(self, event_name, event_unique_id, api_key, param_dict):
-		self.data = {'eventName':event_name, 'apiKey':api_key, 'eventUniqueId':event_unique_id, 
-		'eventTime':long(round(time.time()*1000)), 'properties': param_dict}
-		
-	def json(self):
-		return 	json.dumps(self.data)
-
-def _doWork():
-    while not _shutdown or not _queue.empty():
-        event=_queue.get()
-        _sendEvent(event)
-        _queue.task_done()
-    logging.getLogger(LOGGER_NAME).info('Thread Exit')
 
 def _sendEvent(event):
     try:
@@ -89,16 +67,14 @@ def record(event_name, event_unique_id, param_dict={}, api_key=None):
 	global _misconfigured_warning
 	global _shutdown
 	global _api_key
-	if _shutdown:
-		logging.getLogger(LOGGER_NAME).error('record() called after shutdown!')
 	if api_key == None:
 		if _api_key == None:
-			if not _misconfigured_warning:
+			if _misconfigured_warning:
 				return
 			logging.getLogger(LOGGER_NAME).error('record() called before init() is called! '+
 												'Please call init() first. This message '+
 												'will only be logged once.')
-			misconfigured_warning = True
+			_misconfigured_warning = True
 			return
 		api_key = _api_key
 	else:
@@ -108,33 +84,15 @@ def record(event_name, event_unique_id, param_dict={}, api_key=None):
 		
 	event = {'eventName':event_name, 'apiKey':api_key, 'eventUniqueId':event_unique_id, 
 		'eventTime':long(round(time.time()*1000)), 'properties': param_dict}
-	_queue.put(event)
+	_sendEvent(event)
 
 """ Sets the API key and number of threads to use when recording events.  
 
 :param api_key: the project's API key
 :param num_threads: the number of threads to use
 """
-def init(api_key, num_threads = 4):
+def init(api_key):
 	global _initialized
-	global _queue
 	global _api_key
 	_initialized = True
 	_api_key = api_key
-	if _queue != None:
-		logging.getLogger(LOGGER_NAME).warn('A second initialization attempt was detected. ')
-	_queue=Queue()
-	for i in range(num_threads):
-	    t=Thread(target=_doWork)
-	    t.setDaemon(False) #python 2.5 does not support daemon attribute
-	    t.start()
-	    _threads.append(t)
-	    
-def shutdown():
-	global _shutdown
-	global _threads
-	_shutdown=True
-    	logging.getLogger(LOGGER_NAME).info('Shutting down the Indicative client. Sending the remaining %d events...' % _queue.qsize())
-	for t in _threads:
-		t.join()
-	logging.getLogger(LOGGER_NAME).info('Indicative client shutdown complete!')

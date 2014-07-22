@@ -7,9 +7,7 @@ This REST client creates a JSON representation of your event and posts it to Ind
 
 Features:
 
-+ No external dependencies, so you'll never have library conflicts
-+ Asynchronous, designed to never slow down or break your app
-+ Fault tolerent
++ No external dependencies, so you'll never have library conflicts 
 
 Sample usage:
 
@@ -23,9 +21,6 @@ Sample usage:
     indicative.record('Registration', 'user47', {'Gender': 'Female', 'Age': 23})
     
     
-    // Call shutdown before your application exits to ensure that all 
-    // events in the queue are sent to the Indicative event endpoint
-    indicative.shutdown()
 
 You should modify and extend this class to your heart's content.  If you make any changes please send a pull request!
 
