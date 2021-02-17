@@ -1,3 +1,5 @@
+<img src="https://s3.amazonaws.com/static.indicative.com/assets/companies/indicative-v2/png/Logo-Dark.png" width="250" >
+
 Python Client for Indicative's REST API
 
 
